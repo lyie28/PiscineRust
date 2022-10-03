@@ -1,9 +1,31 @@
+use std::io::BufReader;
+use std::io::BufRead;
 use std::{env};
 use std::error::Error;
 use std::fs::File;
-use std::any::{Any, TypeId};
-use csv::ByteRecord;
 
+
+fn get_format_table(str: &str, out: &mut Vec<char>) -> Result<u32, Box<dyn Error>> {
+
+    let values: Vec<&str> = str.split(';').collect();
+    if values.len() == 0 {
+        println!("Your file had no columns in header row");
+        return Ok(1);
+    }
+    for item in values {
+        if item == "String" {
+            out.push('s');
+        }
+        else if item == "u8" {
+            out.push('u');
+        }
+        else if item == "f32" {
+            out.push('f');
+        }
+    }
+    return Ok(0);
+
+}
 fn main() -> Result<(), Box<dyn Error>> {
 
     let args: Vec<String> = env::args().collect();
@@ -12,28 +34,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
+    let first = 0;
     let path = &args[1];
-    let my_vec: Vec<String>;
     let file = File::open(path)?;
-
-    let mut rdr = csv::ReaderBuilder::new()
-        .delimiter(b';')
-        .from_reader(file);
-
-        let mut result: ByteRecord;  
-        for result in rdr.read_byte_record()? {
-        let ret = ByteRecord::from(rdr.records());
-        let headers = rdr.headers()?;
-            for header in *headers {
-            /*if header.type_id() == TypeId::of::<u32>() {
-                my_vec.push(header.toString()?);
-            } else if header.type_id() == TypeId::of::<String>() {
-                my_vec.push(header);
-            }*/
-                println!("{}", header);
-            }
+    let reader = BufReader::new(&file);
+    let mut tab = vec![];
+    for line in reader.lines() {
+        let my_line = line.unwrap();
+        if first == 0 {
+            let _ret = get_format_table(&my_line, &mut tab);
+        }
+        for items in tab.iter() {
+            println!("Check: {}", items);
+        }
+        //for items in row
+        //get type from index
+        //match
+        //if this
+        //if this
+        //if this
+        //add to vector
     }
 
-    /* match */
     return Ok(());
 }
