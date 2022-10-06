@@ -1,7 +1,6 @@
 fn variable_type<T>(_var: &T) {
     println!("{}", std::any::type_name::<T>());
 }
-
 struct Test {
     _name: String,
     _number: u64,
