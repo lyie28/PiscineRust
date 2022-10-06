@@ -1,10 +1,21 @@
 fn variable_type<T>(_var: &T) {
-    //check if can crash in any way
     println!("{}", std::any::type_name::<T>());
 }
 
+struct Test {
+    _name: String,
+    _number: u64,
+}
 fn main() {
-    //TODO: check this works with absolutely all variable types. Find list of them and check with all
+    let test = Test {
+        _name: String::from("Laura"),
+        _number: 29138918273,
+    };
+
+    let hello = vec![5.5, 6.6];
     variable_type(&"Laura");
     variable_type(&42);
+    variable_type(&test);
+    variable_type(&hello);
+
 }

@@ -1,6 +1,6 @@
 use std::io::BufReader;
 use std::io::BufRead;
-use std::{env};
+use std::env;
 use std::error::Error;
 use std::fs::File;
 
@@ -11,13 +11,19 @@ enum MyEnum {
     Str(String),
 }
 
-fn get_format_table(str: &str, out: &mut Vec<char>) -> Result<u32, Box<dyn Error>> {
+fn get_format_table(str: &str, out: &mut Vec<char>) -> Result<i32, Box<dyn Error>> {
+
+    if str.len() == 0 {
+        println!("Your file had no columns in header row");
+        return Ok(-1);
+    }
 
     let values: Vec<&str> = str.split(';').collect();
     if values.len() == 0 {
         println!("Your file had no columns in header row");
-        return Ok(1);
+        return Ok(-1);
     }
+
     for item in values {
         if item == "String" {
             out.push('s');
@@ -28,11 +34,15 @@ fn get_format_table(str: &str, out: &mut Vec<char>) -> Result<u32, Box<dyn Error
         else if item == "f32" {
             out.push('f');
         }
+        else {
+            return Ok(-1)
+        }
     }
     return Ok(0);
 
 }
 
+/*display implementation so can print out vectors*/
 impl std::fmt::Display for MyEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -43,6 +53,7 @@ impl std::fmt::Display for MyEnum {
     }
 }
 
+/*clone implementation so can push inner vec to outer without error*/
 impl Clone for MyEnum {
     fn clone(&self) -> MyEnum {
         match self {
@@ -55,46 +66,74 @@ impl Clone for MyEnum {
 
 fn main() -> Result<(), Box<dyn Error>> {
 
+    //check args
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         println!("Usage [executable path] [input file]!");
         return Ok(());
     }
-    let mut outer_vec: Vec<Vec<MyEnum>> = Vec::new();
-    let first = 0;
+
+    //open and read file
     let path = &args[1];
     let file = File::open(path)?;
     let reader = BufReader::new(&file);
-    let mut tab = vec![];
+
+    let mut outer_tab: Vec<Vec<MyEnum>> = Vec::new();
+    let mut tab = vec![];    
     let mut count = 0;
-    let mut inner_tab: [Vec<MyEnum>; 10 ]= Default::default();
-    //let ret = count_new_lines(&reader);
+    
     for line in reader.lines() {
-        let my_line = line.unwrap();
-        if first == 0 {
-            let _ret = get_format_table(&my_line, &mut tab);
+        //error handling
+        let my_line: String;
+        match line {
+            Ok(line) => my_line = line,
+            Err(err) => return Err(err.into()),
+        };
+        
+        //create a formatting table which stores order of formats
+        if count == 0 {
+            let ret = get_format_table(&my_line, &mut tab);
+            match ret {
+                Ok(ret) => ret,
+                Err(err) => return Err(err.into()),
+            };
+            if ret.unwrap() == -1 {
+                println!("Unexpected value in header column");
+                return Ok(());
+            }
         }
+        
+        //loop over cells
         let values: Vec<&str> = my_line.split(';').collect();
+        outer_tab.push(Vec::new());
         for item in values {
-            inner_tab[count] = Vec::new();
             if tab[count] == 's' || count == 0 {
-                inner_tab[count].push(MyEnum::Str(item.to_string()));
+                outer_tab[count].push(MyEnum::Str(item.to_string()));
             }
             else if tab[count] == 'u' && count != 0 {
-                inner_tab[count].push(MyEnum::Bit(item.as_bytes()[0]));
+                outer_tab[count].push(MyEnum::Bit(item.as_bytes()[0]));
             }
             else if tab[count] == 'f' && count != 0{
-                inner_tab[count].push(MyEnum::Float(item.parse::<f32>().unwrap()));
+                outer_tab[count].push(MyEnum::Float(item.parse::<f32>().unwrap()));
             }
-            //let printable : &Vec<MyEnum> = &inner_tab[count];
-            //for item in printable {
-            //    print!("{};", item);
-            //}
         }
-        outer_vec.push(inner_tab[count].clone());
         count += 1;
         println!("");
     }
 
+    if count == 0 {
+        println!("Your file was empty!");
+        return Ok(());
+    }
+
+    //print out vector of vectors
+    println!("My vector or vectors is: ");
+    for rows in outer_tab {
+        let cells : &Vec<MyEnum> = &rows;
+            for cell in cells {
+                print!("{};", cell);
+            }
+        println!("");
+    }
     return Ok(());
 }
