@@ -1,0 +1,28 @@
+[package]
+name = "ex07"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = [
+    "linalg",
+    "core",
+    "onnx",
+    "data_type"
+]
+
+[dependencies]
+
+[dependencies.linalg]
+path = "linalg"
+
+[dependencies.core]
+path = "core"
+
+[dependencies.onnx]
+path = "onnx"
+
+[dependencies.data_type]
+path = "data_type"
